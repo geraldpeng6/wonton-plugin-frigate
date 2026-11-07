@@ -26,14 +26,14 @@ services:
     network_mode: none
     restart: "no"
 
-  # 一次性：下载检测模型。模型不打进镜像（约 20 MB），放进数据目录，重装、升级不丢；
+  # 一次性：下载检测模型。模型不打进镜像（约 3.7 MB），放进数据目录，重装、升级不丢；
   # 下载后按 sha256 校验，已有就跳过。需要出网，走插件网络的出口。
   init-model:
     image: ghcr.io/blakeblackshear/frigate:0.18.2-tensorrt@sha256:1cafb6ebbaff0aaf275cc3f31951bcf7e29f3989f18a10ba9565091367d8736c
     user: "${PUID}:${PGID}"
     entrypoint: ["sh", "-c"]
     command:
-      - test -f /cfg/model_cache/yolox_tiny.onnx || (curl -fsSL -C - --retry 3 -o /cfg/model_cache/yolox_tiny.onnx.part https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_tiny.onnx && printf 'YOLOX_SHA256  /cfg/model_cache/yolox_tiny.onnx.part\n' | sha256sum -c - && mv /cfg/model_cache/yolox_tiny.onnx.part /cfg/model_cache/yolox_tiny.onnx)
+      - test -f /cfg/model_cache/yolox_nano.onnx || (curl -fsSL -C - --retry 3 -o /cfg/model_cache/yolox_nano.onnx.part https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_nano.onnx && printf 'c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  /cfg/model_cache/yolox_nano.onnx.part\n' | sha256sum -c - && mv /cfg/model_cache/yolox_nano.onnx.part /cfg/model_cache/yolox_nano.onnx)
     volumes:
       - ${WONTON_APP_DATA}/config:/cfg
     depends_on:
@@ -86,13 +86,14 @@ configs:
           device: AUTO
 
       model:
-        # YOLOX tiny 416x416，上游 YOLOX 发布的 ONNX，由 init-model 服务下载并校验。
+        # YOLOX nano 416x416，上游 YOLOX 发布的 ONNX，由 init-model 服务下载并校验。
+        # 选 nano：安装门（默认 5 分钟）内要下完模型，nano 最小；要更高精度换 tiny/s。
         model_type: yolox
         width: 416
         height: 416
         input_tensor: nchw
         input_dtype: float_denorm
-        path: /config/model_cache/yolox_tiny.onnx
+        path: /config/model_cache/yolox_nano.onnx
         labelmap_path: /labelmap/coco-80.txt
 
       # 网页登录交给云吞网关：关掉 Frigate 自己的登录，只认带 X-Proxy-Secret 的请求
@@ -133,9 +134,9 @@ x-wonton:
       把 Frigate 装在自己家里：接入家里的摄像头，画面不动不看、有动静才录，
       检测出的人、车、动物带框标出来，事件能在手机上回看，录像不出门。
 
-      有 NVIDIA 显卡就自动用显卡做检测（RTX 50 系也能用）。默认检测模型 YOLOX tiny
-      约 20 MB，装的时候自动下载，跑起来占不到 1 GB 显存，几 GB 显存的卡就够；
-      显存越大能同时带的摄像头越多。
+      有 NVIDIA 显卡就自动用显卡做检测（RTX 50 系也能用）。默认检测模型 YOLOX nano
+      约 3.7 MB，装的时候自动下载，占不到 0.5 GB 显存，几 GB 显存的卡就够；
+      显存越大能同时带的摄像头越多，想换更高精度的模型也行（见插件说明）。
 
       摄像头在 Frigate 网页的设置向导里添加，填摄像头的 RTSP 地址就行；
       检测、录像、回放在网页里都能配。给别的设备或软件（VLC、Home Assistant）
@@ -147,9 +148,10 @@ x-wonton:
       your phone. Recordings never leave your machine.
 
       Your NVIDIA GPU is used automatically for detection (RTX 50 series included).
-      The default YOLOX tiny model is about 20 MB, downloads on install and uses
-      under 1 GB of VRAM — a card with a few GB is enough; more VRAM means more
-      simultaneous cameras.
+      The default YOLOX nano model is about 3.7 MB, downloads on install and uses
+      under 0.5 GB of VRAM — a card with a few GB is enough; more VRAM means more
+      simultaneous cameras. Higher-accuracy models can be swapped in (see the
+      plugin README).
 
       Add cameras in the Frigate web setup wizard with their RTSP address.
       For other devices and software (VLC, Home Assistant), the RTSP restream is

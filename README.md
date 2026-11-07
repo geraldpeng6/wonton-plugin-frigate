@@ -12,9 +12,9 @@
 
 | | 大小 | 显存 |
 | --- | --- | --- |
-| 默认模型 YOLOX tiny（416×416） | 约 20 MB | 不到 1 GB |
+| 默认模型 YOLOX nano（416×416） | 约 3.7 MB | 不到 0.5 GB |
 
-模型由安装时的一次性服务下载（上游 [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) 发布的 ONNX，按 sha256 校验），放在插件数据目录 `config/model_cache/` 下，重装、升级不丢。想换 Frigate 支持的其他模型（如 [YOLOv9](https://docs.frigate.video/configuration/object_detectors)），导出 ONNX 后放进同一目录，在 Frigate 网页里改模型配置即可。
+模型由安装时的一次性服务下载（上游 [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) 发布的 ONNX，按 sha256 校验），放在插件数据目录 `config/model_cache/` 下，重装、升级不丢。选 nano 是为了让安装时的下载稳定落在安装时限内；要更高精度，把 YOLOX tiny/s 的 ONNX（同一上游仓库）放进同一目录，在 Frigate 网页里把模型路径换掉即可，[YOLOv9](https://docs.frigate.video/configuration/object_detectors) 等按上游文档导出后同样可用。
 
 要改用 TensorRT 执行器（首次推理多花几分钟建引擎，缓存在数据目录），把 Frigate 网页里检测器的 `device` 从 `AUTO` 改成 `Tensorrt`。
 
