@@ -72,7 +72,8 @@ configs:
   seed-config:
     content: |
       # 云吞插件给 Frigate 的种子配置：首次启动复制进数据目录，之后在 Frigate 网页里改的就是这一份。
-      # 摄像头在 Frigate 网页的设置向导里添加，这里不预置。
+      # 摄像头在 Frigate 网页的设置向导里添加，这里不预置；0.18 起这一节必填（没有摄像头写空表）。
+      cameras: {}
 
       mqtt:
         enabled: false
@@ -104,6 +105,10 @@ configs:
         trusted_proxies:
           - ${WONTON_CORE_ADDRESS}/32
 
+      # 8971 默认强 TLS（上游自签证书）；网关到插件这段在插件网络里，TLS 由网关对外负责。
+      tls:
+        enabled: false
+
       proxy:
         # 网关只放行登录用户，这个实例的主人就是 admin。
         default_role: admin
@@ -122,6 +127,7 @@ x-wonton:
     en: Local NVR with real-time object detection for your cameras
   icon: icon.svg
   notices: [NOTICE]
+  screenshots: [screenshots/review.png, screenshots/explore.png, screenshots/review-all.png]
   author: { name: geraldpeng6, url: https://github.com/geraldpeng6 }
   homepage: https://frigate.video
   # 上游 Frigate 的许可证；插件包自己的许可证写在仓库的 LICENSE 里。
@@ -188,6 +194,6 @@ x-wonton:
   requirements:
     # 上游 -tensorrt 镜像只发 amd64。
     arch: [amd64]
-    # 上游没写最低内存，按本机空闲实测取整（实测约 X M，取 2G）。
+    # 上游没写最低内存，按本机实测取整（一路 768x432 摄像头检测+录像时容器 RSS 约 1.4 GiB，多路按此估）。
     memory: 2G
     gpu: { need: required }

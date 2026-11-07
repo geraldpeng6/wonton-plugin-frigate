@@ -32,8 +32,9 @@ data_check() {
   local marker config
   [[ -n "${SMOKE_WEB_URL:-}" ]] || { echo "SMOKE_WEB_URL 未设置"; return 1; }
   marker="$(cat "$SMOKE_STATE/frigate-data-marker" 2>/dev/null)" || { echo "读不到标记"; return 1; }
-  config="$(curl -sS --noproxy '*' --fail-with-body -b "$SMOKE_JAR" "$SMOKE_WEB_URL/api/config")" ||
-    { echo "GET /api/config 失败"; return 1; }
+  # 读原始 YAML：写进 config.yml 的项要重启才进运行态，GET /api/config 看不到。
+  config="$(curl -sS --noproxy '*' --fail-with-body -b "$SMOKE_JAR" "$SMOKE_WEB_URL/api/config/raw")" ||
+    { echo "GET /api/config/raw 失败"; return 1; }
   grep -qF "frigate.wonton.$marker" <<<"$config" ||
     { echo "配置里找不到标记 frigate.wonton.$marker"; return 1; }
 }
