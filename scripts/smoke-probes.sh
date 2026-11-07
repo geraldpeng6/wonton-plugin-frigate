@@ -1,17 +1,41 @@
-# shellcheck shell=bash
-# scripts/smoke.sh 的一项一项探测，跟着插件走。没写的项会 FAIL 并给出写法，不会默认放行。
-#
-# 页面：web_assert 从标准输入读页面，命中的确是应用的真实页面时返回 0。
-# 身份：identity_check 用应用自己的“当前用户”接口断言认出的是用户管理员。没有用户体系时写 IDENTITY_NA=1，
-#       并在 SMOKE_NOTE 里写原因。dweb / web_get 是带用户会话的请求助手，可继续走应用自己的登录链。
-# 工具：MCP_TOOL 写一个只读工具名（可带插件前缀），MCP_ARGS 是 JSON 参数；mcp_assert 从标准输入读调用结果。
-#       要断言多个工具时改成写 mcp_check；调用前要备数据时写 before_mcp。
-# 装之前要准备（如先配出口代理）：写 before_install。
+# shellcheck shell=bash disable=SC2034
+# SSO/MCP/IDENTITY_NA/SMOKE_NOTE 由探针套件（scripts/probes.sh）读取。
 
-web_assert() { grep -q '你好'; }   # 示例页的标题
+# Frigate：sso=proxy（网关只给登录用户的请求带 X-Proxy-Secret，Frigate 校验 auth_secret）；
+# 清单没有 mcp。
+SSO=proxy
+MCP=0
 
-identity_check() { # 页面回显的就是网关注入的用户名
-  local page
-  page="$(dweb /)" || { echo "页面失败：$page"; return 1; }
-  grep -qF "你好，$SMOKE_OWNER" <<<"$page" || { echo "页面没回显用户 $SMOKE_OWNER：$(head -c 120 <<<"$page")"; return 1; }
+web_assert() { grep -qi '<title>Frigate</title>'; }
+
+# Frigate 关闭自带登录（auth.enabled=false）后没有“当前用户”接口，也不建用户会话；
+# 能打开网页的请求都过了两道门槛：网关会话 + X-Proxy-Secret（对不上 Frigate 直接 401）。
+IDENTITY_NA=1
+SMOKE_NOTE="Frigate 关闭自带登录后没有当前用户接口；网页只对网关认出的用户开放（X-Proxy-Secret）"
+
+# 用户数据：Frigate 的配置（摄像头、检测、录像设置）存在数据库并写回 config.yml，
+# 升级、重装都不能丢。data_write 在配置里写一条带随机标记的 logger 名，data_check 读回来核对。
+data_write() {
+  local marker body url code
+  [[ -n "${SMOKE_WEB_URL:-}" ]] || { echo "SMOKE_WEB_URL 未设置"; return 1; }
+  url="${SMOKE_WEB_URL%/}"
+  marker="wonton$(od -An -N6 -tx1 /dev/urandom | tr -d ' \n')"
+  # 写进 logger.logs：键是 logger 名（任意字符串），值必须是合法日志级别。
+  body="$(jq -nc --arg k "frigate.wonton.$marker" '{"logger":{"logs":{$k:"info"}}}')"
+  code="$(curl -sS --noproxy '*' -o /dev/null -w '%{http_code}' -b "$SMOKE_JAR" \
+    -X POST -H 'Content-Type: application/json' --data "$body" "$url/api/set/config")" ||
+    { echo "POST /api/set/config 请求失败"; return 1; }
+  [[ "$code" == 200 ]] || { echo "POST /api/set/config 返回 $code：$(head -c 200 <<<"$body")"; return 1; }
+  printf '%s' "$marker" > "$SMOKE_STATE/frigate-data-marker" || { echo "存不了标记：$SMOKE_STATE"; return 1; }
+}
+
+data_check() {
+  local marker config url
+  [[ -n "${SMOKE_WEB_URL:-}" ]] || { echo "SMOKE_WEB_URL 未设置"; return 1; }
+  url="${SMOKE_WEB_URL%/}"
+  marker="$(cat "$SMOKE_STATE/frigate-data-marker" 2>/dev/null)" || { echo "读不到标记"; return 1; }
+  config="$(curl -sS --noproxy '*' --fail-with-body -b "$SMOKE_JAR" "$url/api/config")" ||
+    { echo "GET /api/config 失败"; return 1; }
+  grep -qF "frigate.wonton.$marker" <<<"$config" ||
+    { echo "配置里找不到标记 frigate.wonton.$marker"; return 1; }
 }
