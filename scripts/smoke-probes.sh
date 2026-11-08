@@ -25,13 +25,13 @@ data_write() {
     -X PUT -H 'Content-Type: application/json' --data "$body" "$SMOKE_WEB_URL/api/config/set")" ||
     { echo "PUT /api/config/set 请求失败"; return 1; }
   [[ "$code" == 200 ]] || { echo "PUT /api/config/set 返回 $code"; return 1; }
-  printf '%s' "$marker" > "$SMOKE_STATE/frigate-data-marker" || { echo "存不了标记：$SMOKE_STATE"; return 1; }
+  printf '%s' "$marker" > "$SMOKE_STATE" || { echo "存不了标记：$SMOKE_STATE"; return 1; }
 }
 
 data_check() {
   local marker config
   [[ -n "${SMOKE_WEB_URL:-}" ]] || { echo "SMOKE_WEB_URL 未设置"; return 1; }
-  marker="$(cat "$SMOKE_STATE/frigate-data-marker" 2>/dev/null)" || { echo "读不到标记"; return 1; }
+  marker="$(cat "$SMOKE_STATE" 2>/dev/null)" || { echo "读不到标记"; return 1; }
   # 读原始 YAML：写进 config.yml 的项要重启才进运行态，GET /api/config 看不到。
   config="$(curl -sS --noproxy '*' --fail-with-body -b "$SMOKE_JAR" "$SMOKE_WEB_URL/api/config/raw")" ||
     { echo "GET /api/config/raw 失败"; return 1; }
