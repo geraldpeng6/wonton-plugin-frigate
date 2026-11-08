@@ -183,7 +183,7 @@ x-wonton:
     proxy:
       headers:
         # Frigate 校验 X-Proxy-Secret（auth_secret），密钥只有网关认出用户后才带上；
-        # 不用 {user}：Frigate 关掉自带登录后不按用户区分，也证明不了只信任核心（ADR-0023）。
+        # 不用 {user}：Frigate 关掉自带登录后不按用户区分，也证明不了只信任核心（信任边界见公开插件规范的“网关代登录”一节）。
         X-Proxy-Secret: "{secret:frigate_proxy}"
   lan:
     ports:
