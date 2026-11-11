@@ -130,10 +130,10 @@ x-wonton:
   id: video.frigate.frigate
   version: 0.1.0
   kind: app
-  title: { en: Frigate }
+  title: { zh: 摄像头看家（Frigate）, en: Camera Guard (Frigate) }
   description:
-    zh: 摄像头实时目标检测录像机，人物车辆事件全在本机
-    en: Local NVR with real-time object detection for your cameras
+    zh: 像 24 小时值班的保安：接上家里的摄像头，有人、车、动物出现才录像并标出来，手机上随时回看，录像只存在家里。
+    en: "Like a 24/7 security guard: connect your home cameras and it records only when a person, car or animal shows up, marks them, and lets you review events from your phone — recordings never leave home."
   icon: icon.svg
   notices: [NOTICE]
   screenshots: [screenshots/review.png, screenshots/explore.png, screenshots/review-all.png]
