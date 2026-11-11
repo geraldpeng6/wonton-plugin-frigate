@@ -1,6 +1,6 @@
 # 云吞插件：Frigate
 
-[Frigate](https://frigate.video) 是本地 NVR：接家里的摄像头，有动静才录，检测出的人、车、动物带框标出，事件在手机上回看。这个插件把它装在云吞里：网页经云吞网关打开（用云吞账号），显卡由云吞交给它，录像放在插件数据目录。开发流程见[插件开发指南](https://github.com/geraldpeng6/wonton-docs/blob/main/develop.md)。
+[Frigate](https://frigate.video) 是本地 NVR：接家里的摄像头，有动静才录，检测出的人、车、动物带框标出，事件在手机上回看。这个插件把它装在云吞里：网页经云吞网关打开（用云吞账号），显卡由云吞交给它，录像放在插件数据目录。开发流程见[插件开发指南](https://github.com/wontonapp/wonton-docs/blob/main/develop.md)。
 
 ## 摄像头
 
